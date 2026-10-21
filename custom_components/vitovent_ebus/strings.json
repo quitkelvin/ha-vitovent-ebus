@@ -49,9 +49,11 @@
       "target_stage": {
         "name": "Target stage",
         "state": {
-          "reduced": "Reduced (100 m³/h)",
-          "normal": "Normal (200 m³/h)",
-          "high": "High (300 m³/h)"
+          "reduced": "Reduced",
+          "normal": "Normal",
+          "high": "High",
+          "eco": "Eco",
+          "max": "Max"
         }
       },
       "reason": {
@@ -76,9 +78,9 @@
       "stage": {
         "name": "Stage",
         "state": {
-          "reduced": "Reduced (100 m³/h)",
-          "normal": "Normal (200 m³/h)",
-          "high": "High (300 m³/h)",
+          "reduced": "Reduced",
+          "normal": "Normal",
+          "high": "High",
           "holiday": "Holiday (50 m³/h)",
           "auto": "Auto"
         }
@@ -184,7 +186,9 @@
           "auto": "Auto",
           "reduced": "Reduced",
           "normal": "Normal",
-          "high": "High"
+          "high": "High",
+          "eco": "Eco",
+          "max": "Max"
         }
       },
       "slot_days": {
@@ -205,9 +209,11 @@
       "slot_stage": {
         "name": "Time window {n} stage",
         "state": {
-          "reduced": "Reduced (100 m³/h)",
-          "normal": "Normal (200 m³/h)",
-          "high": "High (300 m³/h)"
+          "reduced": "Reduced",
+          "normal": "Normal",
+          "high": "High",
+          "eco": "Eco",
+          "max": "Max"
         }
       }
     },
@@ -223,6 +229,18 @@
       },
       "slot_active": {
         "name": "Time window {n}"
+      },
+      "co2_boost": {
+        "name": "CO₂ boost"
+      },
+      "cooking_boost": {
+        "name": "Cooking boost"
+      },
+      "time_program": {
+        "name": "Time program"
+      },
+      "eco_mode": {
+        "name": "Eco mode"
       }
     },
     "button": {
@@ -253,6 +271,30 @@
       },
       "imbalance": {
         "name": "Imbalance (supply − exhaust)"
+      },
+      "limit_bath_humidity_limit": {
+        "name": "Limit bathroom humidity"
+      },
+      "limit_room_humidity_limit": {
+        "name": "Limit room humidity"
+      },
+      "limit_co2_limit": {
+        "name": "Limit CO₂"
+      },
+      "limit_cooking_watts": {
+        "name": "Limit cooking power"
+      },
+      "target_flow_eco": {
+        "name": "Eco air volume"
+      },
+      "target_flow_reduced": {
+        "name": "Reduced air volume (eco mode)"
+      },
+      "target_flow_high": {
+        "name": "High air volume (eco mode)"
+      },
+      "target_flow_max": {
+        "name": "Max air volume"
       }
     }
   },

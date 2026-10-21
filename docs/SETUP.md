@@ -95,13 +95,55 @@ create an automation on *Filter change needed* or *Unit does not follow* turning
 | Topic | Finding |
 |---|---|
 | Setting the stage | `Ventilatorbetrieb/set` (40a1) only holds for a few minutes, `VentilatorbetriebAlternative` (40cb) was ignored by this unit → the package re-sends every 30 s, like the original panel. |
-| Holiday (50 m³/h) | Ran in *ConstantPWM* with the exhaust fan at ~3,460 rpm → negative pressure. Not offered; minimum is Reduced (100 m³/h). |
+| Holiday (50 m³/h) | Ran in *ConstantPWM* with the exhaust fan at ~3,460 rpm → negative pressure. Not offered. For less air lower `LuftmengeStufe1` (stage Reduced, 50–400 m³/h) – the unit stays in ConstantFlow (0.3.0 number entities, 0.4.0 eco mode). |
 | Maintenance values | Filter status/days/flow, operating hours, total flow, pressures and error memory are only sent on request → polled by the package (pressures every 5 min, rest hourly). |
 | Filter limit | Factory: 432,000 m³ (≈ 3 months at ~200 m³/h). The unit reports "Dirty" when reached. |
 | Filter reset | Script `Vitovent Filter Reset` → `ResetNotifications = Filter`. "ErrorsAndFilter" does not work. |
 | Pressures | Supply/exhaust pressure in Pa – a slow rise over weeks is an early sign of clogging filters. |
 | Unbalance | `StaendigesUngleichgewicht` may be set by the installer (test unit: −20). Leave it unless you know why. |
 | Error memory | Raw 18-byte HEX. Decoding is not documented yet – contributions welcome. |
+
+## 5. Optional: supply and exhaust air sensors
+
+The unit itself only measures outdoor and extract air. A second ESP32 with two probes in the **supply air** (to the
+rooms) and the **exhaust air** (to outside) shows the real heat recovery and the humidity of both air streams.
+
+- Probes: two I²C temperature/humidity probes in a stainless sleeve (sold e.g. as "FS200-SHT45"). The tested ones
+  answered as **SHT3x** (ESPHome `sht3xd`), not SHT4x – if `sht4x` only reads `0xFF`/CRC errors, try `sht3xd`.
+- All probes have the address 0x44 → one I²C bus per probe (the ESP32 has two).
+- Wires (typical colour code): red VCC **3.3 V** (not 5 V), black GND, yellow SCL, green SDA. With 1.5 m cable plus
+  connectors 10 kHz bus speed was reliable.
+- Position: 30–50 cm after the unit's supply and exhaust stub, straight duct section, tip in the middle of the air
+  stream, sealed air-tight. Do not put the exhaust probe at the lowest point (condensate). Which stub is which: see
+  the dimension drawing in the installation manual of your type (top view, letters A–D).
+
+```yaml
+# ESPHome (excerpt) – secrets in secrets.yaml
+i2c:
+  - id: bus_supply
+    sda: GPIO21
+    scl: GPIO22
+    frequency: 10kHz
+  - id: bus_exhaust
+    sda: GPIO25
+    scl: GPIO26
+    frequency: 10kHz
+sensor:
+  - platform: sht3xd
+    i2c_id: bus_supply
+    update_interval: 30s
+    temperature: { name: "Supply air temperature" }
+    humidity: { name: "Supply air humidity" }
+  - platform: sht3xd
+    i2c_id: bus_exhaust
+    update_interval: 30s
+    temperature: { name: "Exhaust air temperature" }
+    humidity: { name: "Exhaust air humidity" }
+```
+
+Heat recovery (supply side) = (supply − outdoor) / (extract − outdoor), only meaningful with ≥ 4 K between extract and
+outdoor air and the bypass closed. Recovered heat ≈ supply air flow × 0.34 Wh/(m³·K) × (supply − outdoor).
+Test unit, 10 °C outside, 50–80 m³/h: about 80 %.
 
 ## 6. Safety
 

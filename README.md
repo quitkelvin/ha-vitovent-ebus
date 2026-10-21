@@ -28,6 +28,12 @@ Home Assistant takes over the **Viessmann Vitovent 300-W** heat-recovery ventila
     start, end (over midnight possible) and stage – set directly on the device page or in a dashboard
   - optional weekly plan via a UI schedule helper (stage per time block)
   - 30-min boost script, fixed manual stages
+  - **0.4.0:** switches *Humidity boost*, *CO₂ boost*, *Cooking boost* with adjustable limits (number entities, no
+    need to open the options), switch *Time program* (windows only count – and the example card only shows them –
+    while it is on), **Eco mode** with two extra stages *Eco* (e.g. 60 m³/h) and *Max* (e.g. 400 m³/h): the unit
+    stage Reduced/High gets the matching air volume, written only when it has to change (at most every 10 min)
+- **Optional second ESP32** with two temperature/humidity probes in supply and exhaust air → heat recovery
+  efficiency and recovered heat, see [docs/SETUP.md](docs/SETUP.md#5-optional-supply-and-exhaust-air-sensors)
 - **Monitoring**: warning when the unit does not follow the target stage for 10 min (or ebusd delivers nothing),
   values expire when ebusd stops sending, list of configured input sensors that are unavailable
 - **Maintenance**: filter status, filter days and flow, **% remaining and estimated days until change**,

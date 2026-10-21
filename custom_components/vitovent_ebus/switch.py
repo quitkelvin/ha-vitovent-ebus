@@ -1,4 +1,4 @@
-"""Switches: control on/off (read-only mode), humidity boost, summer night cooling."""
+"""Switches: control on/off (read-only mode), boosts (humidity, CO₂, cooking), summer night cooling, time program, eco mode."""
 
 from __future__ import annotations
 
@@ -19,7 +19,11 @@ from .entity import VitoventEntity
 SWITCHES = {
     "control": ("control", False, "mdi:remote", EntityCategory.CONFIG),
     "humidity_boost": ("humidity_boost", True, "mdi:water-percent", None),
+    "co2_boost": ("co2_boost", True, "mdi:molecule-co2", None),
+    "cooking_boost": ("cooking_boost", True, "mdi:stove", None),
     "summer_cooling": ("summer_cooling", False, "mdi:snowflake", None),
+    "time_program": ("time_program", False, "mdi:calendar-clock", None),
+    "eco_mode": ("eco_mode", False, "mdi:leaf", None),
 }
 
 

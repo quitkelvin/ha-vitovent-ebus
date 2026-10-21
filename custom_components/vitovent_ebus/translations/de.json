@@ -49,9 +49,11 @@
       "target_stage": {
         "name": "Soll-Stufe",
         "state": {
-          "reduced": "Reduziert (100 m³/h)",
-          "normal": "Normal (200 m³/h)",
-          "high": "Hoch (300 m³/h)"
+          "reduced": "Reduziert",
+          "normal": "Normal",
+          "high": "Hoch",
+          "eco": "Eco",
+          "max": "Max"
         }
       },
       "reason": {
@@ -76,9 +78,9 @@
       "stage": {
         "name": "Stufe",
         "state": {
-          "reduced": "Reduziert (100 m³/h)",
-          "normal": "Normal (200 m³/h)",
-          "high": "Hoch (300 m³/h)",
+          "reduced": "Reduziert",
+          "normal": "Normal",
+          "high": "Hoch",
           "holiday": "Urlaub (50 m³/h)",
           "auto": "Auto"
         }
@@ -184,7 +186,9 @@
           "auto": "Automatik",
           "reduced": "Reduziert",
           "normal": "Normal",
-          "high": "Hoch"
+          "high": "Hoch",
+          "eco": "Eco",
+          "max": "Max"
         }
       },
       "slot_days": {
@@ -205,9 +209,11 @@
       "slot_stage": {
         "name": "Zeitfenster {n} Stufe",
         "state": {
-          "reduced": "Reduziert (100 m³/h)",
-          "normal": "Normal (200 m³/h)",
-          "high": "Hoch (300 m³/h)"
+          "reduced": "Reduziert",
+          "normal": "Normal",
+          "high": "Hoch",
+          "eco": "Eco",
+          "max": "Max"
         }
       }
     },
@@ -223,6 +229,18 @@
       },
       "slot_active": {
         "name": "Zeitfenster {n}"
+      },
+      "co2_boost": {
+        "name": "CO₂-Boost"
+      },
+      "cooking_boost": {
+        "name": "Koch-Boost"
+      },
+      "time_program": {
+        "name": "Zeitprogramm"
+      },
+      "eco_mode": {
+        "name": "Eco-Modus"
       }
     },
     "button": {
@@ -253,6 +271,30 @@
       },
       "imbalance": {
         "name": "Ungleichgewicht (Zuluft − Abluft)"
+      },
+      "limit_bath_humidity_limit": {
+        "name": "Grenze Bad-Feuchte"
+      },
+      "limit_room_humidity_limit": {
+        "name": "Grenze Raumfeuchte"
+      },
+      "limit_co2_limit": {
+        "name": "Grenze CO₂"
+      },
+      "limit_cooking_watts": {
+        "name": "Grenze Kochleistung"
+      },
+      "target_flow_eco": {
+        "name": "Luftmenge Eco"
+      },
+      "target_flow_reduced": {
+        "name": "Luftmenge Reduziert (Eco-Modus)"
+      },
+      "target_flow_high": {
+        "name": "Luftmenge Hoch (Eco-Modus)"
+      },
+      "target_flow_max": {
+        "name": "Luftmenge Max"
       }
     }
   },

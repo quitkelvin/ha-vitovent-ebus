@@ -42,47 +42,177 @@ entities:
   - entity: number.vitovent_300_w_imbalance_supply_exhaust
     name: Imbalance (supply − exhaust)
   - type: section
-    label: Time program
-  - entity: switch.vitovent_300_w_time_window_1
-    name: Window 1
-  - entity: select.vitovent_300_w_time_window_1_days
-    name: "  days"
-  - entity: time.vitovent_300_w_time_window_1_start
-    name: "  start"
-  - entity: time.vitovent_300_w_time_window_1_end
-    name: "  end"
-  - entity: select.vitovent_300_w_time_window_1_stage
-    name: "  stage"
-  - entity: switch.vitovent_300_w_time_window_2
-    name: Window 2
-  - entity: select.vitovent_300_w_time_window_2_days
-    name: "  days"
-  - entity: time.vitovent_300_w_time_window_2_start
-    name: "  start"
-  - entity: time.vitovent_300_w_time_window_2_end
-    name: "  end"
-  - entity: select.vitovent_300_w_time_window_2_stage
-    name: "  stage"
-  - entity: switch.vitovent_300_w_time_window_3
-    name: Window 3
-  - entity: select.vitovent_300_w_time_window_3_days
-    name: "  days"
-  - entity: time.vitovent_300_w_time_window_3_start
-    name: "  start"
-  - entity: time.vitovent_300_w_time_window_3_end
-    name: "  end"
-  - entity: select.vitovent_300_w_time_window_3_stage
-    name: "  stage"
-  - entity: switch.vitovent_300_w_time_window_4
-    name: Window 4
-  - entity: select.vitovent_300_w_time_window_4_days
-    name: "  days"
-  - entity: time.vitovent_300_w_time_window_4_start
-    name: "  start"
-  - entity: time.vitovent_300_w_time_window_4_end
-    name: "  end"
-  - entity: select.vitovent_300_w_time_window_4_stage
-    name: "  stage"
+    label: Automatic – what may raise the stage
+  - entity: switch.vitovent_300_w_humidity_boost
+    name: Humidity boost (bathroom + room)
+  - entity: number.vitovent_300_w_limit_bathroom_humidity
+    name: "  from bathroom humidity"
+  - entity: number.vitovent_300_w_limit_room_humidity
+    name: "  from room humidity"
+  - entity: switch.vitovent_300_w_co2_boost
+    name: CO₂ boost
+  - entity: number.vitovent_300_w_limit_co2
+    name: "  from CO₂"
+  - entity: switch.vitovent_300_w_cooking_boost
+    name: Cooking boost
+  - entity: number.vitovent_300_w_limit_cooking_power
+    name: "  from kitchen power (15-min mean)"
+  - type: section
+    label: Eco mode (eco/max via air volume of the unit stages)
+  - entity: switch.vitovent_300_w_eco_mode
+    name: Eco mode
+  - entity: number.vitovent_300_w_eco_air_volume
+    name: "  Eco"
+  - entity: number.vitovent_300_w_reduced_air_volume_eco_mode
+    name: "  Reduced"
+  - entity: number.vitovent_300_w_high_air_volume_eco_mode
+    name: "  High"
+  - entity: number.vitovent_300_w_max_air_volume
+    name: "  Max"
+  - type: section
+    label: Time program (shown while the switch Time program is on)
+  - entity: switch.vitovent_300_w_time_program
+    name: Time program
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: switch.vitovent_300_w_time_window_1
+        name: Window 1
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: select.vitovent_300_w_time_window_1_days
+        name: "  days"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: time.vitovent_300_w_time_window_1_start
+        name: "  start"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: time.vitovent_300_w_time_window_1_end
+        name: "  end"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: select.vitovent_300_w_time_window_1_stage
+        name: "  stage"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: switch.vitovent_300_w_time_window_2
+        name: Window 2
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: select.vitovent_300_w_time_window_2_days
+        name: "  days"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: time.vitovent_300_w_time_window_2_start
+        name: "  start"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: time.vitovent_300_w_time_window_2_end
+        name: "  end"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: select.vitovent_300_w_time_window_2_stage
+        name: "  stage"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: switch.vitovent_300_w_time_window_3
+        name: Window 3
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: select.vitovent_300_w_time_window_3_days
+        name: "  days"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: time.vitovent_300_w_time_window_3_start
+        name: "  start"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: time.vitovent_300_w_time_window_3_end
+        name: "  end"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: select.vitovent_300_w_time_window_3_stage
+        name: "  stage"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: switch.vitovent_300_w_time_window_4
+        name: Window 4
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: select.vitovent_300_w_time_window_4_days
+        name: "  days"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: time.vitovent_300_w_time_window_4_start
+        name: "  start"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: time.vitovent_300_w_time_window_4_end
+        name: "  end"
+  - type: conditional
+    conditions:
+      - entity: switch.vitovent_300_w_time_program
+        state: "on"
+    row:
+        entity: select.vitovent_300_w_time_window_4_stage
+        name: "  stage"
   - type: section
     label: Filter & maintenance
   - entity: binary_sensor.vitovent_300_w_filter_change_needed

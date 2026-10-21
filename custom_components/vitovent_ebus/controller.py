@@ -57,6 +57,9 @@ from .const import (
     MSG_RESET,
     MSG_STAGE_SET,
     PARAM_MESSAGES,
+    PARAM_WRITE_MIN,
+    STAGE_FLOW,
+    FLOW_DEFAULTS,
     PRESSURE_INTERVAL,
     PRESSURE_MESSAGES,
     STAGE_TO_EBUS,
@@ -82,7 +85,15 @@ class VitoventController:
         self.mode = "auto"
         self.control = False  # off = read only, nothing is written to the unit
         self.humidity_boost = True
+        self.co2_boost = True
+        self.cooking_boost = True
+        self.time_program = False  # 0.4.0: time windows only count (and are shown) while this is on
+        self.eco_mode = False      # 0.4.0: stages eco/max via air volume of the unit stages Reduced/High
         self.summer_cooling = False
+        # limits, restored by their number entities (start values from the options)
+        self.limits = {k: float(self.opts[k]) for k in (CONF_BATH_LIMIT, CONF_ROOM_LIMIT, CONF_CO2_LIMIT, CONF_COOKING_WATTS)}
+        self.flows = dict(FLOW_DEFAULTS)
+        self._param_written: dict[str, datetime] = {}
         self.boost_until: datetime | None = None
         # time program, restored by its entities
         self.slots: list[dict[str, Any]] = [
@@ -240,13 +251,31 @@ class VitoventController:
         self._update_cooking(now)
         self.target, self.reason = self._decide(dt_util.as_local(now))
         if self.control and self.target in STAGES:
+            if self.eco_mode:
+                await self._ensure_flow(self.target, now)
             await mqtt.async_publish(self.hass, f"{self.prefix}/{MSG_STAGE_SET}/set", STAGE_TO_EBUS[self.target])
         self._update_mismatch(now)
         async_dispatcher_send(self.hass, self.signal)
 
+    async def _ensure_flow(self, stage: str, now: datetime) -> None:
+        """Eco mode: set the air volume of the unit stage that eco/reduced or high/max share (only if it differs)."""
+        if stage not in STAGE_FLOW:
+            return
+        msg, key = STAGE_FLOW[stage]
+        want = int(self.flows[key])
+        have = self.number(msg)
+        if have is None or int(have) == want:
+            return
+        last = self._param_written.get(msg)
+        if last is not None and now - last < PARAM_WRITE_MIN:
+            return
+        self._param_written[msg] = now
+        await mqtt.async_publish(self.hass, f"{self.prefix}/{msg}/set", str(want))
+        self._later(3, lambda: self._request([msg]))
+
     @callback
     def _update_mismatch(self, now: datetime) -> None:
-        if not self.control or self.target not in STAGES or self.stage == self.target:
+        if not self.control or self.target not in STAGES or self.stage == EBUS_TO_STAGE.get(STAGE_TO_EBUS[self.target]):
             self._mismatch_since, self.mismatch = None, False
             self._sync_issue()
             return
@@ -312,7 +341,7 @@ class VitoventController:
             self._kitchen_means.append((now, self.kitchen_mean))
         while self._kitchen_means and now - self._kitchen_means[0][0] > COOKING_RUN_ON:
             self._kitchen_means.popleft()
-        watts = float(self.opts.get(CONF_COOKING_WATTS, 500))
+        watts = self.limits[CONF_COOKING_WATTS]
         self.cooking = any(m > watts for _, m in self._kitchen_means)
 
     # ── stage logic ──────────────────────────────────────────────────────────────────────────────────────
@@ -365,14 +394,18 @@ class VitoventController:
         self.inputs_unavailable = missing
 
         if self.mode != "auto":
+            if self.mode in ("eco", "max") and not self.eco_mode:  # eco/max need eco mode (air volume changes)
+                return ("reduced" if self.mode == "eco" else "high"), "fixed"
             return self.mode, "fixed"
 
         h = now.hour
         night_start, night_end = int(o[CONF_NIGHT_START]), int(o[CONF_NIGHT_END])
         night = h >= night_start or h < night_end
-        wet = self.humidity_boost and bool(bath_vals) and max(bath_vals) > float(o[CONF_BATH_LIMIT])
-        rh_high = rh is not None and rh >= float(o[CONF_ROOM_LIMIT])
-        co2_high = co2 is not None and co2 >= float(o[CONF_CO2_LIMIT])
+        lim = self.limits
+        wet = self.humidity_boost and bool(bath_vals) and max(bath_vals) > lim[CONF_BATH_LIMIT]
+        rh_high = self.humidity_boost and rh is not None and rh >= lim[CONF_ROOM_LIMIT]
+        co2_high = self.co2_boost and co2 is not None and co2 >= lim[CONF_CO2_LIMIT]
+        low = "eco" if self.eco_mode else "reduced"  # minimum stage
         outside = self.number("Aussenlufttemperatur")
         cool = (
             self.summer_cooling
@@ -388,10 +421,10 @@ class VitoventController:
         plan = self.hass.states.get(plan_id) if plan_id else None
 
         if vacation and not (wet or rh_high or co2_high):
-            return "reduced", "vacation"
+            return low, "vacation"
         if boost:
             return "high", "boost"
-        if self.cooking:
+        if self.cooking_boost and self.cooking:
             return "high", "cooking"
         if wet:
             return "high", "bathroom_humid"
@@ -402,16 +435,16 @@ class VitoventController:
         if cool:
             return "high", "summer_night_cooling"
         if away:
-            return "reduced", "nobody_home"
+            return low, "nobody_home"
         if (slot_stage := self.program_stage(now)) is not None:
             return slot_stage, "time_program"
         if plan is not None and plan.state == "on":
             stage = str(plan.attributes.get("stufe") or plan.attributes.get("stage") or "normal").lower()
             return (stage if stage in STAGES else "normal"), "weekly_plan"
         if str(now.month) in o[CONF_HEATING_MONTHS]:
-            return "reduced", "heating_period"
+            return low, "heating_period"
         if night:
-            return "reduced", "night"
+            return low, "night"
         return "normal", "day"
 
     # ── time program ─────────────────────────────────────────────────────────────────────────────────────
@@ -427,6 +460,8 @@ class VitoventController:
 
     def program_stage(self, now: datetime) -> str | None:
         """Highest stage of all active windows that cover 'now' (local time), None if no window is active."""
+        if not self.time_program:
+            return None
         hits = []
         wd, t = now.weekday(), now.time().replace(second=0, microsecond=0)
         for slot in self.slots:

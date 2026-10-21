@@ -41,10 +41,18 @@ DEFAULTS = {
 # Stages. "Holiday" (50 m³/h) is deliberately not offered: on the tested unit it ran in ConstantPWM
 # with the exhaust fan at ~3,460 rpm (negative pressure in the house). For less air, lower the air volume
 # of the stage "Reduced" instead (parameter "Air volume Reduced", 50–400 m³/h, stays in ConstantFlow).
-STAGES = ["reduced", "normal", "high"]
-STAGE_TO_EBUS = {"reduced": "Reduced", "normal": "Normal", "high": "High"}
+# 0.4.0: two extra stages built from the unit stages plus a different air volume (only with the switch "Eco mode"):
+#   eco = unit stage Reduced with "Eco air volume" (e.g. 60 m³/h), max = unit stage High with "Max air volume" (e.g. 400 m³/h).
+# The air volume of the unit stage is rewritten only when it has to change (unit parameter, kept to a minimum).
+STAGES = ["eco", "reduced", "normal", "high", "max"]
+STAGE_TO_EBUS = {"eco": "Reduced", "reduced": "Reduced", "normal": "Normal", "high": "High", "max": "High"}
 EBUS_TO_STAGE = {"Holiday": "holiday", "Reduced": "reduced", "Normal": "normal", "High": "high", "Auto": "auto"}
-MODES = ["auto", "reduced", "normal", "high"]
+MODES = ["auto", "eco", "reduced", "normal", "high", "max"]
+# stage -> (unit parameter, controller flow key) that has to be set before the stage is sent (eco mode only)
+STAGE_FLOW = {"eco": ("LuftmengeStufe1", "flow_eco"), "reduced": ("LuftmengeStufe1", "flow_reduced"),
+              "high": ("LuftmengeStufe3", "flow_high"), "max": ("LuftmengeStufe3", "flow_max")}
+FLOW_DEFAULTS = {"flow_eco": 60, "flow_reduced": 100, "flow_high": 300, "flow_max": 400}
+PARAM_WRITE_MIN = timedelta(minutes=10)  # at most one air volume change per parameter in this time
 
 REASONS = [
     "fixed", "vacation", "boost", "cooking", "bathroom_humid", "room_humidity_high", "co2_high",
