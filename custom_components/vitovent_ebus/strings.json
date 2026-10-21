@@ -1,0 +1,273 @@
+{
+  "title": "Vitovent 300-W (eBUS)",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to ebusd",
+        "description": "MQTT topic prefix of ebusd for the unit (circuit Vitovent300W400). Control starts switched OFF (read only) – turn on the switch \"Control\" when the values look right.",
+        "data": {
+          "topic_prefix": "MQTT topic prefix"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This unit is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Sensors and rules",
+        "description": "All sensors are optional – leave empty what you do not have.",
+        "data": {
+          "kitchen_power": "Kitchen power sensor",
+          "cooking_watts": "Cooking threshold (15-min mean)",
+          "bath_humidity": "Bathroom humidity sensors",
+          "bath_humidity_limit": "Bathroom humidity limit",
+          "room_humidity_max": "Highest room humidity",
+          "room_humidity_limit": "Room humidity limit",
+          "co2": "CO₂ sensor",
+          "co2_limit": "CO₂ limit",
+          "indoor_temperature": "Mean indoor temperature",
+          "presence": "Someone at home",
+          "vacation": "Vacation switch",
+          "weekly_plan": "Weekly plan (schedule helper)",
+          "heating_months": "Heating period months (minimum flow)",
+          "cooling_months": "Summer night cooling months",
+          "night_start": "Night starts at",
+          "night_end": "Night ends at"
+        },
+        "data_description": {
+          "weekly_plan": "Each block may carry additional data  stufe: reduced | normal | high  (none = normal).",
+          "kitchen_power": "Kettle and coffee machine stay below the 15-min mean; cooking keeps High for 60 min."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "target_stage": {
+        "name": "Target stage",
+        "state": {
+          "reduced": "Reduced (100 m³/h)",
+          "normal": "Normal (200 m³/h)",
+          "high": "High (300 m³/h)"
+        }
+      },
+      "reason": {
+        "name": "Reason",
+        "state": {
+          "fixed": "Fixed by mode",
+          "vacation": "Vacation",
+          "boost": "Boost",
+          "cooking": "Cooking",
+          "bathroom_humid": "Bathroom humid",
+          "room_humidity_high": "Room humidity high",
+          "co2_high": "CO₂ high",
+          "summer_night_cooling": "Summer night cooling",
+          "nobody_home": "Nobody home",
+          "weekly_plan": "Weekly plan",
+          "heating_period": "Heating period (minimum)",
+          "night": "Night (minimum)",
+          "day": "Day",
+          "time_program": "Time program"
+        }
+      },
+      "stage": {
+        "name": "Stage",
+        "state": {
+          "reduced": "Reduced (100 m³/h)",
+          "normal": "Normal (200 m³/h)",
+          "high": "High (300 m³/h)",
+          "holiday": "Holiday (50 m³/h)",
+          "auto": "Auto"
+        }
+      },
+      "supply_flow": {
+        "name": "Supply air flow"
+      },
+      "exhaust_flow": {
+        "name": "Exhaust air flow"
+      },
+      "supply_fan_speed": {
+        "name": "Supply fan speed"
+      },
+      "exhaust_fan_speed": {
+        "name": "Exhaust fan speed"
+      },
+      "extract_temperature": {
+        "name": "Extract air temperature"
+      },
+      "outdoor_temperature": {
+        "name": "Outdoor air temperature"
+      },
+      "bypass": {
+        "name": "Bypass",
+        "state": {
+          "initializing": "Initializing",
+          "opening": "Opening",
+          "closing": "Closing",
+          "open": "Open",
+          "closed": "Closed",
+          "error": "Error",
+          "calibrating": "Calibrating"
+        }
+      },
+      "frost_protection": {
+        "name": "Frost protection"
+      },
+      "fan_status": {
+        "name": "Fan status"
+      },
+      "supply_pressure": {
+        "name": "Supply pressure"
+      },
+      "exhaust_pressure": {
+        "name": "Exhaust pressure"
+      },
+      "filter_status": {
+        "name": "Filter status",
+        "state": {
+          "clean": "Clean",
+          "dirty": "Dirty"
+        }
+      },
+      "filter_days": {
+        "name": "Filter days"
+      },
+      "filter_flow": {
+        "name": "Filter air flow"
+      },
+      "filter_flow_limit": {
+        "name": "Filter air flow limit"
+      },
+      "filter_remaining": {
+        "name": "Filter remaining"
+      },
+      "filter_change_in": {
+        "name": "Filter change in"
+      },
+      "operating_hours": {
+        "name": "Operating hours"
+      },
+      "total_flow": {
+        "name": "Total air flow"
+      },
+      "error_memory": {
+        "name": "Error memory"
+      },
+      "software": {
+        "name": "Software"
+      },
+      "kitchen_power_mean": {
+        "name": "Kitchen power 15-min mean"
+      }
+    },
+    "binary_sensor": {
+      "cooking": {
+        "name": "Cooking"
+      },
+      "boost_active": {
+        "name": "Boost active"
+      },
+      "filter_change_needed": {
+        "name": "Filter change needed"
+      },
+      "stage_mismatch": {
+        "name": "Unit does not follow"
+      }
+    },
+    "select": {
+      "mode": {
+        "name": "Mode",
+        "state": {
+          "auto": "Auto",
+          "reduced": "Reduced",
+          "normal": "Normal",
+          "high": "High"
+        }
+      },
+      "slot_days": {
+        "name": "Time window {n} days",
+        "state": {
+          "daily": "Daily",
+          "mon_fri": "Mon–Fri",
+          "sat_sun": "Sat–Sun",
+          "mon": "Monday",
+          "tue": "Tuesday",
+          "wed": "Wednesday",
+          "thu": "Thursday",
+          "fri": "Friday",
+          "sat": "Saturday",
+          "sun": "Sunday"
+        }
+      },
+      "slot_stage": {
+        "name": "Time window {n} stage",
+        "state": {
+          "reduced": "Reduced (100 m³/h)",
+          "normal": "Normal (200 m³/h)",
+          "high": "High (300 m³/h)"
+        }
+      }
+    },
+    "switch": {
+      "control": {
+        "name": "Control"
+      },
+      "humidity_boost": {
+        "name": "Boost on high humidity"
+      },
+      "summer_cooling": {
+        "name": "Summer night cooling"
+      },
+      "slot_active": {
+        "name": "Time window {n}"
+      }
+    },
+    "button": {
+      "boost": {
+        "name": "Boost 30 min"
+      },
+      "filter_reset": {
+        "name": "Reset filter (after change only)"
+      }
+    },
+    "time": {
+      "slot_start": {
+        "name": "Time window {n} start"
+      },
+      "slot_end": {
+        "name": "Time window {n} end"
+      }
+    },
+    "number": {
+      "flow_reduced": {
+        "name": "Air volume Reduced"
+      },
+      "flow_normal": {
+        "name": "Air volume Normal"
+      },
+      "flow_high": {
+        "name": "Air volume High"
+      },
+      "imbalance": {
+        "name": "Imbalance (supply − exhaust)"
+      }
+    }
+  },
+  "issues": {
+    "stage_mismatch": {
+      "title": "Ventilation does not follow Home Assistant",
+      "description": "Target stage {target}, the unit reports {stage} for more than 10 minutes. Check ebusd, the eBUS adapter and MQTT. The unit keeps ventilating on its own stage; this notice disappears when it follows again."
+    }
+  },
+  "exceptions": {
+    "read_only": {
+      "message": "Control is off (read only) – turn on the switch 'Control' to reset the filter counter."
+    },
+    "read_only_parameter": {
+      "message": "Control is off (read only) – turn on the switch 'Control' to change unit parameters."
+    }
+  }
+}

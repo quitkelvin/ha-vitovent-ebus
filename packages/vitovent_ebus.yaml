@@ -1,0 +1,382 @@
+# Viessmann Vitovent 300-W (= Brink Renovent Excellent 400 Plus) – Home Assistant controls the unit alone via eBUS
+# MIT License · not affiliated with Viessmann or Brink · use at your own risk (see README.md)
+#
+# Requirements: ebusd with --mqttjson and the "Vitovent300W400" config from pvyleta/ebusd-brink-hru,
+# Home Assistant MQTT integration. Setup: docs/SETUP.md
+#
+# ┌─ ADJUST HERE ONLY ──────────────────────────────────────────────────────────────────────────────────────┐
+# │ Your own entity IDs live in the attributes of sensor.vitovent_settings (first block below).              │
+# │ Leave an entry empty ("" or []) if you don't have that sensor – the related function is then off.       │
+# └──────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+template:
+  - sensor:
+      - name: "Vitovent Settings"
+        unique_id: vitovent_settings
+        icon: mdi:cog
+        state: "ok"
+        attributes:
+          # power of the kitchen circuit / hob in W – "cooking" = 15-min mean > cooking_watts (kettle/coffee stay below)
+          kitchen_power: "sensor.kitchen_power"
+          cooking_watts: 500
+          # bathroom humidity sensors in % – boost above bath_humidity_limit
+          bath_humidity: ["sensor.bathroom_humidity"]
+          bath_humidity_limit: 70
+          # highest room humidity in % and CO₂ in ppm – boost above the limits
+          room_humidity_max: ""
+          room_humidity_limit: 65
+          co2: ""
+          co2_limit: 1000
+          # mean indoor temperature in °C – for summer night cooling
+          indoor_temperature: ""
+          # someone at home (binary_sensor, person, group) – "off"/"not_home" = nobody home → Reduced
+          presence: ""
+          # optional vacation switch (input_boolean) → Reduced unless humidity/CO₂ are high
+          vacation: ""
+          # heating period: minimum flow all day (saves heat); boost only for cooking/humidity/CO₂/boost
+          heating_months: [10, 11, 12, 1, 2, 3, 4]
+          # optional weekly plan: create a "Schedule" helper in the UI (Settings › Helpers), put its ID here.
+          # Each block may carry additional data  stufe: Reduced | Normal | High  (no data = Normal).
+          # Applies before heating period/night, after boost/cooking/humidity/CO₂ and "nobody home".
+          weekly_plan: ""
+          # summer night cooling (only with switch "Vitovent Summer Night Cooling" on)
+          cooling_months: [5, 6, 7, 8, 9]
+          night_start: 21
+          night_end: 6
+
+      # Target stage that is sent to the unit (Reduced / Normal / High). Attribute "reason" explains why.
+      - name: "Vitovent Target Stage"
+        unique_id: vitovent_target_stage
+        icon: mdi:fan-auto
+        state: >
+          {% set c = states.sensor.vitovent_settings.attributes if states.sensor.vitovent_settings is not none else {} %}
+          {% set m = states('input_select.vitovent_mode') %}
+          {% set fixed = {'Reduced (100 m³/h)':'Reduced','Normal (200 m³/h)':'Normal','High (300 m³/h)':'High'} %}
+          {% if m in fixed %}{{ fixed[m] }}
+          {% else %}
+            {% set h = now().hour %}
+            {% set night = h >= c.get('night_start', 21) or h < c.get('night_end', 6) %}
+            {% set bath = c.get('bath_humidity', []) | map('states') | map('float', 0) | list %}
+            {% set wet = is_state('input_boolean.vitovent_humidity_boost', 'on') and bath | count > 0
+                         and bath | max > c.get('bath_humidity_limit', 70) %}
+            {% set air = (c.get('room_humidity_max') != '' and states(c.get('room_humidity_max', ''))|float(0) >= c.get('room_humidity_limit', 65))
+                      or (c.get('co2') != '' and states(c.get('co2', ''))|float(0) >= c.get('co2_limit', 1000)) %}
+            {% set inside = states(c.get('indoor_temperature', ''))|float(22) %}
+            {% set outside = states('sensor.vitovent_outdoor_air_temperature')|float(99) %}
+            {% set cool = is_state('input_boolean.vitovent_summer_cooling', 'on') and now().month in c.get('cooling_months', [])
+                          and inside > 24 and outside < inside - 2 and (h >= c.get('night_start', 21) or h < 8) %}
+            {% set away = c.get('presence') != '' and states(c.get('presence', '')) in ['off', 'not_home', '0'] %}
+            {% if c.get('vacation') != '' and is_state(c.get('vacation', ''), 'on') and not (wet or air) %}Reduced
+            {% elif is_state('timer.vitovent_boost', 'active') or is_state('input_boolean.vitovent_cooking', 'on') or wet or air or cool %}High
+            {% elif away %}Reduced
+            {% elif c.get('weekly_plan') != '' and is_state(c.get('weekly_plan', ''), 'on') %}{{ state_attr(c.get('weekly_plan'), 'stufe') if state_attr(c.get('weekly_plan'), 'stufe') in ['Reduced', 'Normal', 'High'] else 'Normal' }}
+            {% elif now().month in c.get('heating_months', []) %}Reduced
+            {% elif night %}Reduced
+            {% else %}Normal{% endif %}
+          {% endif %}
+        attributes:
+          reason: >
+            {% set c = states.sensor.vitovent_settings.attributes if states.sensor.vitovent_settings is not none else {} %}
+            {% set m = states('input_select.vitovent_mode') %}
+            {% set h = now().hour %}
+            {% set bath = c.get('bath_humidity', []) | map('states') | map('float', 0) | list %}
+            {% set wet = is_state('input_boolean.vitovent_humidity_boost', 'on') and bath | count > 0
+                         and bath | max > c.get('bath_humidity_limit', 70) %}
+            {% set rh = c.get('room_humidity_max') != '' and states(c.get('room_humidity_max', ''))|float(0) >= c.get('room_humidity_limit', 65) %}
+            {% set co2 = c.get('co2') != '' and states(c.get('co2', ''))|float(0) >= c.get('co2_limit', 1000) %}
+            {% set inside = states(c.get('indoor_temperature', ''))|float(22) %}
+            {% set outside = states('sensor.vitovent_outdoor_air_temperature')|float(99) %}
+            {% set cool = is_state('input_boolean.vitovent_summer_cooling', 'on') and now().month in c.get('cooling_months', [])
+                          and inside > 24 and outside < inside - 2 and (h >= c.get('night_start', 21) or h < 8) %}
+            {% if m != 'Auto' %}fixed: {{ m }}
+            {% elif c.get('vacation') != '' and is_state(c.get('vacation', ''), 'on') and not (wet or rh or co2) %}vacation
+            {% elif is_state('timer.vitovent_boost', 'active') %}boost
+            {% elif is_state('input_boolean.vitovent_cooking', 'on') %}cooking
+            {% elif wet %}bathroom humid
+            {% elif rh %}room humidity high
+            {% elif co2 %}CO₂ high
+            {% elif cool %}summer night cooling
+            {% elif c.get('presence') != '' and states(c.get('presence', '')) in ['off', 'not_home', '0'] %}nobody home
+            {% elif c.get('weekly_plan') != '' and is_state(c.get('weekly_plan', ''), 'on') %}weekly plan
+            {% elif now().month in c.get('heating_months', []) %}heating period (minimum)
+            {% elif h >= c.get('night_start', 21) or h < c.get('night_end', 6) %}night (minimum)
+            {% else %}day{% endif %}
+          # configured input sensors that currently deliver no value (their boost cannot trigger then)
+          inputs_unavailable: >
+            {% set c = states.sensor.vitovent_settings.attributes if states.sensor.vitovent_settings is not none else {} %}
+            {% set ids = (c.get('bath_humidity', []) | list) + [c.get('room_humidity_max', ''), c.get('co2', ''), c.get('indoor_temperature', ''), c.get('presence', '')] %}
+            {{ ids | reject('eq', '') | reject('has_value') | list }}  {# has_value = false for unknown, unavailable or missing #}
+
+      # Filter rest in % and estimated days until the unit asks for a filter change
+      - name: "Vitovent Filter Remaining"
+        unique_id: vitovent_filter_remaining
+        unit_of_measurement: "%"
+        icon: mdi:air-filter
+        state: >
+          {% set u = states('sensor.vitovent_filter_flow')|float(-1) %}
+          {% set mx = states('sensor.vitovent_filter_flow_limit')|float(0) %}
+          {{ [0, (100 * (1 - u / mx))|round(0)] | max if u >= 0 and mx > 0 else none }}
+      - name: "Vitovent Filter Change In"
+        unique_id: vitovent_filter_change_in
+        unit_of_measurement: d
+        icon: mdi:calendar-arrow-right
+        # remaining m³ divided by the mean daily flow since the last filter reset (meaningful after 3 days)
+        state: >
+          {% set u = states('sensor.vitovent_filter_flow')|float(-1) %}
+          {% set mx = states('sensor.vitovent_filter_flow_limit')|float(0) %}
+          {% set t = states('sensor.vitovent_filter_days')|float(0) %}
+          {{ [0, ((mx - u) / (u / t))|round(0)] | max if u > 0 and mx > 0 and t >= 3 else none }}
+
+  - binary_sensor:
+      # Cooking = kitchen 15-min mean above cooking_watts within the last 60 min (60 min run-on against smells)
+      - name: "Vitovent Cooking Detected"
+        unique_id: vitovent_cooking_detected
+        icon: mdi:stove
+        device_class: running
+        state: >
+          {{ states('sensor.vitovent_kitchen_power_15min_max_60min')|float(0)
+             > (state_attr('sensor.vitovent_settings', 'cooking_watts') or 500)|float }}
+      # unit does not follow HA (wrong stage or no data from ebusd) – see automation "Vitovent: stage monitoring"
+      - name: "Vitovent Stage Mismatch"
+        unique_id: vitovent_stage_mismatch
+        device_class: problem
+        icon: mdi:fan-alert
+        state: >
+          {% set t = states('sensor.vitovent_target_stage') %}
+          {{ t in ['Reduced', 'Normal', 'High'] and states('sensor.vitovent_stage') != t }}
+        delay_on: { minutes: 10 }
+      - name: "Vitovent Filter Change Needed"
+        unique_id: vitovent_filter_change_needed
+        device_class: problem
+        icon: mdi:air-filter
+        state: >
+          {{ is_state('sensor.vitovent_filter_status', 'Dirty') or states('sensor.vitovent_filter_remaining')|float(100) <= 3 }}
+
+sensor:
+  # kitchen power: 15-min mean, then highest value of the last 60 min (both survive restarts via the recorder)
+  - platform: statistics
+    name: "Vitovent Kitchen Power 15min"
+    unique_id: vitovent_kitchen_power_15min
+    entity_id: sensor.kitchen_power   # ← same entity as kitchen_power above (statistics cannot read attributes)
+    state_characteristic: average_step
+    max_age: { minutes: 15 }
+    sampling_size: 5000
+    keep_last_sample: true
+  - platform: statistics
+    name: "Vitovent Kitchen Power 15min Max 60min"
+    unique_id: vitovent_kitchen_power_15min_max_60min
+    entity_id: sensor.vitovent_kitchen_power_15min
+    state_characteristic: value_max
+    max_age: { minutes: 60 }
+    sampling_size: 5000
+    keep_last_sample: true
+
+# ── Values from the unit (ebusd, MQTT JSON) ──────────────────────────────────────────────────────────────
+# Live values (flows, fan speeds, temperatures, bypass) are polled by ebusd itself (--pollinterval).
+# Filter/counter/pressure messages are only sent on request → automation "Vitovent: poll maintenance values".
+mqtt:
+  sensor:
+    - { name: "Vitovent Stage", unique_id: vitovent_stage, expire_after: 300, state_topic: ebusd/Vitovent300W400/Ventilatorbetrieb,
+        value_template: "{{ value_json['0'].value }}", icon: mdi:fan }
+    - { name: "Vitovent Supply Air Flow", unique_id: vitovent_supply_flow, expire_after: 300, state_topic: ebusd/Vitovent300W400/TatsaechlicheZuluftmenge,
+        value_template: "{{ value_json['0'].value }}", unit_of_measurement: "m³/h", state_class: measurement, icon: mdi:weather-windy }
+    - { name: "Vitovent Exhaust Air Flow", unique_id: vitovent_exhaust_flow, expire_after: 300, state_topic: ebusd/Vitovent300W400/TatsaechlicheAbluftmenge,
+        value_template: "{{ value_json['0'].value }}", unit_of_measurement: "m³/h", state_class: measurement, icon: mdi:weather-windy }
+    - { name: "Vitovent Supply Fan Speed", unique_id: vitovent_supply_rpm, expire_after: 300, state_topic: ebusd/Vitovent300W400/TatsaechlicheDrehzahlZuluft,
+        value_template: "{{ value_json['0'].value }}", unit_of_measurement: rpm, state_class: measurement, entity_category: diagnostic }
+    - { name: "Vitovent Exhaust Fan Speed", unique_id: vitovent_exhaust_rpm, expire_after: 300, state_topic: ebusd/Vitovent300W400/TatsaechlicheDrehzahlAbluft,
+        value_template: "{{ value_json['0'].value }}", unit_of_measurement: rpm, state_class: measurement, entity_category: diagnostic }
+    - { name: "Vitovent Extract Air Temperature", unique_id: vitovent_extract_temp, expire_after: 300, state_topic: ebusd/Vitovent300W400/Ablufttemperatur,
+        value_template: "{{ value_json['0'].value }}", unit_of_measurement: "°C", device_class: temperature, state_class: measurement }
+    - { name: "Vitovent Outdoor Air Temperature", unique_id: vitovent_outdoor_temp, expire_after: 300, state_topic: ebusd/Vitovent300W400/Aussenlufttemperatur,
+        value_template: "{{ value_json['0'].value }}", unit_of_measurement: "°C", device_class: temperature, state_class: measurement }
+    - { name: "Vitovent Bypass", unique_id: vitovent_bypass, expire_after: 300, state_topic: ebusd/Vitovent300W400/StatusBypass,
+        value_template: "{{ value_json['0'].value }}", icon: mdi:valve }
+    - { name: "Vitovent Frost Protection", unique_id: vitovent_frost, expire_after: 300, state_topic: ebusd/Vitovent300W400/StatusFrostschutz,
+        value_template: "{{ value_json['0'].value }}", icon: mdi:snowflake-alert, entity_category: diagnostic }
+    - { name: "Vitovent Fan Status", unique_id: vitovent_fan_status, expire_after: 300, state_topic: ebusd/Vitovent300W400/StatusVentilator,
+        value_template: "{{ value_json['0'].value }}", icon: mdi:fan-alert, entity_category: diagnostic }
+    # maintenance values (on request)
+    - { name: "Vitovent Filter Status", unique_id: vitovent_filter_status, expire_after: 7200, state_topic: ebusd/Vitovent300W400/Filtermeldung,
+        value_template: "{{ value_json['0'].value }}", icon: mdi:air-filter }
+    - { name: "Vitovent Filter Days", unique_id: vitovent_filter_days, expire_after: 7200, state_topic: ebusd/Vitovent300W400/FilterverwendungTage,
+        value_template: "{{ value_json['0'].value }}", unit_of_measurement: d, state_class: measurement, icon: mdi:calendar-clock }
+    - { name: "Vitovent Filter Flow", unique_id: vitovent_filter_flow, expire_after: 7200, state_topic: ebusd/Vitovent300W400/Filterverwendung,
+        value_template: "{{ value_json['0'].value }}", unit_of_measurement: "m³", state_class: measurement, icon: mdi:air-filter }
+    - { name: "Vitovent Filter Flow Limit", unique_id: vitovent_filter_flow_limit, expire_after: 7200, state_topic: ebusd/Vitovent300W400/MaximalerDurchsatzFilter,
+        value_template: "{{ value_json['0'].value }}", unit_of_measurement: "m³", icon: mdi:air-filter, entity_category: diagnostic }
+    - { name: "Vitovent Operating Hours", unique_id: vitovent_operating_hours, expire_after: 7200, state_topic: ebusd/Vitovent300W400/Betriebsdauer,
+        value_template: "{{ value_json['0'].value }}", unit_of_measurement: h, device_class: duration, state_class: total_increasing }
+    - { name: "Vitovent Total Air Flow", unique_id: vitovent_total_flow, expire_after: 7200, state_topic: ebusd/Vitovent300W400/Gesamtdurchsatz,
+        value_template: "{{ value_json['0'].value }}", unit_of_measurement: "m³", state_class: total_increasing, icon: mdi:weather-windy }
+    - { name: "Vitovent Supply Pressure", unique_id: vitovent_supply_pressure, expire_after: 900, state_topic: ebusd/Vitovent300W400/IstwertZuluftdruck,
+        value_template: "{{ value_json['0'].value }}", unit_of_measurement: Pa, device_class: pressure, state_class: measurement }
+    - { name: "Vitovent Exhaust Pressure", unique_id: vitovent_exhaust_pressure, expire_after: 900, state_topic: ebusd/Vitovent300W400/IstwertAbluftdruck,
+        value_template: "{{ value_json['0'].value }}", unit_of_measurement: Pa, device_class: pressure, state_class: measurement }
+    - { name: "Vitovent Error Memory", unique_id: vitovent_error_memory, expire_after: 7200, state_topic: ebusd/Vitovent300W400/GespeicherteFehler,
+        value_template: "{{ value_json['0'].value }}", icon: mdi:alert-circle-outline, entity_category: diagnostic }
+    - { name: "Vitovent Software", unique_id: vitovent_software, expire_after: 7200, state_topic: ebusd/Vitovent300W400/SoftwareVersion,
+        value_template: "{{ value_json['0'].value }}", icon: mdi:chip, entity_category: diagnostic }
+
+# ── Automations ──────────────────────────────────────────────────────────────────────────────────────────
+automation:
+  # Sends the target stage every 30 s. FanMode (40a1) only holds for a few minutes on this unit and
+  # FanModeAlternative (40cb) is ignored – so HA repeats it, exactly like the original wall panel does.
+  - id: vitovent_send_stage
+    alias: "Vitovent: send stage via eBUS"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: sensor.vitovent_target_stage
+        not_to: [unknown, unavailable]
+      - trigger: time_pattern
+        seconds: "/30"
+      - trigger: homeassistant
+        event: start
+    conditions:
+      - condition: template
+        value_template: "{{ states('sensor.vitovent_target_stage') in ['Reduced', 'Normal', 'High'] }}"
+    actions:
+      - action: mqtt.publish
+        data:
+          topic: ebusd/Vitovent300W400/Ventilatorbetrieb/set
+          payload: "{{ states('sensor.vitovent_target_stage') }}"
+
+  # Cooking switch follows the detection (also fixes a stuck state after restarts)
+  - id: vitovent_cooking
+    alias: "Vitovent: cooking follows detection"
+    mode: queued
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.vitovent_cooking_detected
+        to: ["on", "off"]
+      - trigger: homeassistant
+        event: start
+      - trigger: time_pattern
+        minutes: "/5"
+    conditions:
+      - condition: template
+        value_template: >
+          {{ states('binary_sensor.vitovent_cooking_detected') in ['on', 'off'] and
+             states('binary_sensor.vitovent_cooking_detected') != states('input_boolean.vitovent_cooking') }}
+    actions:
+      - action: "input_boolean.turn_{{ states('binary_sensor.vitovent_cooking_detected') }}"
+        target: { entity_id: input_boolean.vitovent_cooking }
+
+  - id: vitovent_poll_maintenance
+    alias: "Vitovent: poll maintenance values"
+    mode: queued
+    triggers:
+      - trigger: time_pattern
+        minutes: "/5"
+        id: pressure
+      - trigger: time_pattern
+        minutes: "7"
+        id: all
+      - trigger: homeassistant
+        event: start
+        id: all
+    actions:
+      - variables:
+          messages: >
+            {% set p = ['IstwertZuluftdruck', 'IstwertAbluftdruck'] %}
+            {{ p if trigger.id == 'pressure' else p + ['Filtermeldung', 'FilterverwendungTage', 'Filterverwendung',
+               'MaximalerDurchsatzFilter', 'Betriebsdauer', 'Gesamtdurchsatz', 'GespeicherteFehler', 'SoftwareVersion'] }}
+      - repeat:
+          for_each: "{{ messages }}"
+          sequence:
+            - action: mqtt.publish
+              data:
+                topic: "ebusd/Vitovent300W400/{{ repeat.item }}/get"
+                payload: ""
+            - delay: { seconds: 2 }
+
+  # Notification when the unit has not followed the target stage for 10 min (or ebusd/adapter delivers nothing).
+  # The unit itself keeps ventilating on its own stage in that case – it is never switched off.
+  - id: vitovent_stage_monitoring
+    alias: "Vitovent: stage monitoring"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.vitovent_stage_mismatch
+        to: "on"
+    conditions:
+      - condition: template
+        value_template: "{{ this.attributes.last_triggered is none or (now() - this.attributes.last_triggered) > timedelta(hours=6) }}"
+    actions:
+      - action: notify.notify
+        data:
+          title: "Ventilation does not follow Home Assistant"
+          message: >
+            Target {{ states('sensor.vitovent_target_stage') }}, unit reports {{ states('sensor.vitovent_stage') }} for 10 min.
+            Check ebusd, the eBUS adapter and MQTT.
+
+  # One notification when the filter needs changing (again after 7 days at the earliest).
+  # Replace notify.notify with your phone, e.g. notify.mobile_app_<your_phone>.
+  - id: vitovent_filter_notify
+    alias: "Vitovent: filter change notification"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.vitovent_filter_change_needed
+        to: "on"
+        for: { minutes: 30 }
+    conditions:
+      - condition: template
+        value_template: "{{ this.attributes.last_triggered is none or (now() - this.attributes.last_triggered) > timedelta(days=7) }}"
+    actions:
+      - action: notify.notify
+        data:
+          title: "Ventilation: change filters"
+          message: >
+            Filter {{ states('sensor.vitovent_filter_status') }}, {{ states('sensor.vitovent_filter_remaining') }} % left
+            ({{ states('sensor.vitovent_filter_days') }} days, {{ states('sensor.vitovent_filter_flow')|int(0) }} m³).
+            After changing them run the script "Vitovent Filter Reset".
+
+# ── Helpers ──────────────────────────────────────────────────────────────────────────────────────────────
+# "Holiday" (50 m³/h) is deliberately not offered: on the tested unit it ran in ConstantPWM with the exhaust fan at
+# ~3,460 rpm (negative pressure in the house). Minimum is therefore Reduced (100 m³/h). The unit never switches off.
+input_select:
+  vitovent_mode:
+    name: "Vitovent Mode"
+    icon: mdi:fan
+    options: ["Auto", "Reduced (100 m³/h)", "Normal (200 m³/h)", "High (300 m³/h)"]
+
+input_boolean:
+  vitovent_cooking:
+    name: "Vitovent Cooking"
+    icon: mdi:stove
+  vitovent_humidity_boost:
+    name: "Vitovent Boost on High Humidity"
+    icon: mdi:water-percent
+  vitovent_summer_cooling:
+    name: "Vitovent Summer Night Cooling"
+    icon: mdi:snowflake
+
+timer:
+  vitovent_boost:
+    name: "Vitovent Boost"
+    duration: "00:30:00"
+    icon: mdi:fan-plus
+
+script:
+  vitovent_boost:
+    alias: "Vitovent Boost 30 min"
+    icon: mdi:fan-plus
+    sequence:
+      - action: timer.start
+        target: { entity_id: timer.vitovent_boost }
+  vitovent_filter_reset:
+    alias: "Vitovent Filter Reset"
+    icon: mdi:air-filter
+    description: "Only after replacing the filters! Resets filter days and filter flow in the unit."
+    sequence:
+      - action: mqtt.publish
+        data:
+          topic: ebusd/Vitovent300W400/ResetNotifications/set
+          payload: "Filter"
+      - delay: { seconds: 5 }
+      - action: mqtt.publish
+        data:
+          topic: ebusd/Vitovent300W400/FilterverwendungTage/get
+          payload: ""

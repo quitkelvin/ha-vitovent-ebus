@@ -1,0 +1,121 @@
+# Example card for the integration (standard HA entities card) – Dashboard › Add card › Manual.
+# Entity IDs as created with an English Home Assistant; in other languages check Settings › Devices › Vitovent 300-W.
+type: entities
+title: Ventilation
+state_color: true
+entities:
+  - entity: select.vitovent_300_w_mode
+    name: Mode
+  - entity: sensor.vitovent_300_w_target_stage
+    name: Target stage
+    secondary_info: last-changed
+  - entity: sensor.vitovent_300_w_reason
+    name: Reason
+  - entity: sensor.vitovent_300_w_stage
+    name: Stage reported by the unit
+  - entity: switch.vitovent_300_w_control
+    name: Control (off = read only)
+  - entity: sensor.vitovent_300_w_supply_air_flow
+    name: Supply air
+  - entity: sensor.vitovent_300_w_exhaust_air_flow
+    name: Exhaust air
+  - entity: sensor.vitovent_300_w_outdoor_air_temperature
+    name: Outdoor air
+  - entity: sensor.vitovent_300_w_extract_air_temperature
+    name: Extract air
+  - entity: sensor.vitovent_300_w_bypass
+    name: Bypass
+  - entity: binary_sensor.vitovent_300_w_cooking
+    name: Cooking detected
+  - entity: binary_sensor.vitovent_300_w_boost_active
+    name: Boost active
+  - entity: binary_sensor.vitovent_300_w_unit_does_not_follow
+    name: Unit does not follow
+  - type: section
+    label: Air volumes (installer values, writable only with Control on)
+  - entity: number.vitovent_300_w_air_volume_reduced
+    name: Air volume Reduced
+  - entity: number.vitovent_300_w_air_volume_normal
+    name: Air volume Normal
+  - entity: number.vitovent_300_w_air_volume_high
+    name: Air volume High
+  - entity: number.vitovent_300_w_imbalance_supply_exhaust
+    name: Imbalance (supply − exhaust)
+  - type: section
+    label: Time program
+  - entity: switch.vitovent_300_w_time_window_1
+    name: Window 1
+  - entity: select.vitovent_300_w_time_window_1_days
+    name: "  days"
+  - entity: time.vitovent_300_w_time_window_1_start
+    name: "  start"
+  - entity: time.vitovent_300_w_time_window_1_end
+    name: "  end"
+  - entity: select.vitovent_300_w_time_window_1_stage
+    name: "  stage"
+  - entity: switch.vitovent_300_w_time_window_2
+    name: Window 2
+  - entity: select.vitovent_300_w_time_window_2_days
+    name: "  days"
+  - entity: time.vitovent_300_w_time_window_2_start
+    name: "  start"
+  - entity: time.vitovent_300_w_time_window_2_end
+    name: "  end"
+  - entity: select.vitovent_300_w_time_window_2_stage
+    name: "  stage"
+  - entity: switch.vitovent_300_w_time_window_3
+    name: Window 3
+  - entity: select.vitovent_300_w_time_window_3_days
+    name: "  days"
+  - entity: time.vitovent_300_w_time_window_3_start
+    name: "  start"
+  - entity: time.vitovent_300_w_time_window_3_end
+    name: "  end"
+  - entity: select.vitovent_300_w_time_window_3_stage
+    name: "  stage"
+  - entity: switch.vitovent_300_w_time_window_4
+    name: Window 4
+  - entity: select.vitovent_300_w_time_window_4_days
+    name: "  days"
+  - entity: time.vitovent_300_w_time_window_4_start
+    name: "  start"
+  - entity: time.vitovent_300_w_time_window_4_end
+    name: "  end"
+  - entity: select.vitovent_300_w_time_window_4_stage
+    name: "  stage"
+  - type: section
+    label: Filter & maintenance
+  - entity: binary_sensor.vitovent_300_w_filter_change_needed
+    name: Filter change needed
+  - entity: sensor.vitovent_300_w_filter_remaining
+    name: Filter remaining
+  - entity: sensor.vitovent_300_w_filter_change_in
+    name: Filter change in
+  - entity: sensor.vitovent_300_w_filter_days
+    name: Filter in use
+  - entity: sensor.vitovent_300_w_supply_pressure
+    name: Supply pressure
+  - entity: sensor.vitovent_300_w_exhaust_pressure
+    name: Exhaust pressure
+  - entity: sensor.vitovent_300_w_operating_hours
+    name: Operating hours
+  - type: button
+    name: Boost 30 min
+    icon: mdi:fan-plus
+    action_name: Start
+    tap_action:
+      action: perform-action
+      perform_action: button.press
+      target: { entity_id: button.vitovent_300_w_boost_30_min }
+  - type: button
+    name: Reset filter (after change only)
+    icon: mdi:air-filter
+    action_name: Reset
+    tap_action:
+      action: perform-action
+      perform_action: button.press
+      target: { entity_id: button.vitovent_300_w_reset_filter_after_change_only }
+      confirmation: { text: "Filters really replaced? This resets filter days and flow in the unit." }
+
+# For the YAML package (packages/vitovent_ebus.yaml) use the entities sensor.vitovent_target_stage,
+# sensor.vitovent_filter_remaining, script.vitovent_boost, script.vitovent_filter_reset … instead.
