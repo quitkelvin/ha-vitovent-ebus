@@ -141,3 +141,11 @@ eBUS – ohne Bedienteil und ohne Cloud. Das Paket kann:
 - [ebusd](https://github.com/john30/ebusd) by john30
 - Brink/Vitovent message definitions by [pvyleta](https://github.com/pvyleta/ebusd-brink-hru) and
   [dstrigl](https://github.com/dstrigl/ebusd-config-brink-renovent-excellent-300)
+
+## License and third-party parts
+
+MIT for the code in this repository (see [LICENSE](LICENSE)). It contains **no** code or configuration files from the
+projects above: ebusd (GPL-3.0) runs as a separate program and is only talked to over MQTT, the message definition
+file from pvyleta/ebusd-brink-hru (GPL-3.0) is downloaded by you (see docs/SETUP.md) and keeps its own licence – this
+repository only uses the message names as MQTT topics. dstrigl's configuration is credited as documentation; nothing was
+copied from it. No Python packages are required (manifest `requirements: []`).
