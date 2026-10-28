@@ -48,6 +48,12 @@ Home Assistant takes over the **Viessmann Vitovent 300-W** heat-recovery ventila
 - Starts read-only (integration and YAML package): a **Control** switch decides whether HA writes anything to the unit
 - A **repair notice** (Settings › Repairs) appears while the unit does not follow the target stage – no automation needed
 
+## Dashboard (Bubble style)
+
+A ready-made dark dashboard view in Bubble Card style (rounded cards, pop-up with details) is in [`dashboard/bubble.yaml`](dashboard/bubble.yaml). It needs [Bubble Card](https://github.com/Clooos/Bubble-Card) (HACS, v3.2 or newer). Add it via *Edit dashboard → ⋮ → Raw configuration editor* under `views:`; entity IDs are the English defaults – adjust them if yours differ.
+
+<img src="docs/images/bubble_start.png" width="300" alt="Bubble dashboard"> <img src="docs/images/bubble_popup.png" width="300" alt="Bubble dashboard">
+
 ## Installation
 
 ### HACS (recommended)

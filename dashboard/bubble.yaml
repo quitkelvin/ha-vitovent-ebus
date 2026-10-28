@@ -1,0 +1,153 @@
+# Bubble-style dashboard view (dark, rounded cards) – requires Bubble Card from HACS (Clooos/Bubble-Card, v3.2 or newer).
+# Add it as a view: Edit dashboard → ⋮ → Raw configuration editor → paste under `views:` (or copy the two cards into an existing view).
+# Tap the main card to open the pop-up (hash #ventilation). Entity IDs are the defaults for an English installation –
+# adjust them if your device or entities are named differently.
+title: Ventilation
+path: ventilation
+cards:
+- type: vertical-stack
+  cards:
+  - type: custom:bubble-card
+    card_type: separator
+    name: Ventilation
+    icon: mdi:hvac
+  - type: custom:bubble-card
+    card_type: button
+    button_type: state
+    entity: sensor.vitovent_300_w_stage
+    name: Ventilation
+    show_state: true
+    icon: mdi:fan
+    sub_button:
+    - entity: sensor.vitovent_300_w_supply_air_flow
+      show_state: true
+      show_icon: true
+    - entity: sensor.vitovent_300_w_outdoor_air_temperature
+      show_state: true
+      show_icon: true
+    tap_action:
+      action: navigate
+      navigation_path: '#ventilation'
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+    - type: custom:bubble-card
+      card_type: button
+      button_type: state
+      entity: select.vitovent_300_w_mode
+      name: Mode
+      show_state: true
+      icon: mdi:tune
+    - type: custom:bubble-card
+      card_type: button
+      button_type: state
+      entity: sensor.vitovent_300_w_filter_change_in
+      name: Filter
+      show_state: true
+      icon: mdi:air-filter
+- type: custom:bubble-card
+  card_type: pop-up
+  hash: '#ventilation'
+  popup_style: home-assistant
+  name: Ventilation
+  icon: mdi:hvac
+  cards:
+  - type: custom:bubble-card
+    card_type: separator
+    name: Now
+    icon: mdi:fan
+  - type: custom:bubble-card
+    card_type: button
+    button_type: state
+    entity: sensor.vitovent_300_w_stage
+    name: Stage
+    show_state: true
+    icon: mdi:fan
+    sub_button:
+    - entity: sensor.vitovent_300_w_target_stage
+      show_state: true
+      show_icon: true
+    - entity: sensor.vitovent_300_w_reason
+      show_state: true
+      show_icon: true
+  - type: custom:bubble-card
+    card_type: button
+    button_type: state
+    entity: sensor.vitovent_300_w_supply_air_flow
+    name: Air flow
+    show_state: true
+    icon: mdi:weather-windy
+    sub_button:
+    - entity: sensor.vitovent_300_w_exhaust_air_flow
+      show_state: true
+      show_icon: true
+  - type: custom:bubble-card
+    card_type: button
+    button_type: state
+    entity: sensor.vitovent_300_w_outdoor_air_temperature
+    name: Outdoor air
+    show_state: true
+    icon: mdi:thermometer
+    sub_button:
+    - entity: sensor.vitovent_300_w_extract_air_temperature
+      show_state: true
+      show_icon: true
+    - entity: sensor.vitovent_300_w_bypass
+      show_state: true
+      show_icon: true
+  - type: custom:bubble-card
+    card_type: separator
+    name: Control
+    icon: mdi:tune-variant
+  - type: custom:bubble-card
+    card_type: button
+    button_type: state
+    entity: select.vitovent_300_w_mode
+    name: Mode
+    show_state: true
+    icon: mdi:tune
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+    - type: custom:bubble-card
+      card_type: button
+      button_type: switch
+      entity: switch.vitovent_300_w_eco_mode
+      name: Eco
+      show_state: true
+      icon: mdi:leaf
+    - type: custom:bubble-card
+      card_type: button
+      button_type: switch
+      entity: switch.vitovent_300_w_cooking_boost
+      name: Cooking boost
+      show_state: true
+      icon: mdi:stove
+    - type: custom:bubble-card
+      card_type: button
+      button_type: switch
+      entity: switch.vitovent_300_w_summer_night_cooling
+      name: Night cooling
+      show_state: true
+      icon: mdi:weather-night
+    - type: custom:bubble-card
+      card_type: button
+      button_type: name
+      entity: button.vitovent_300_w_boost_30_min
+      name: Boost 30 min
+      show_state: false
+      icon: mdi:fan-plus
+      tap_action:
+        action: toggle
+  - type: custom:bubble-card
+    card_type: separator
+    name: History
+    icon: mdi:chart-line
+  - type: history-graph
+    title: Stage and air flow 24 h
+    hours_to_show: 24
+    entities:
+    - entity: sensor.vitovent_300_w_stage
+    - entity: sensor.vitovent_300_w_supply_air_flow
