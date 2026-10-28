@@ -234,6 +234,10 @@ automation:
       - trigger: homeassistant
         event: start
     conditions:
+      # read only until you turn on "Vitovent Control" (off after the first start)
+      - condition: state
+        entity_id: input_boolean.vitovent_control
+        state: "on"
       - condition: template
         value_template: "{{ states('sensor.vitovent_target_stage') in ['Reduced', 'Normal', 'High'] }}"
     actions:
@@ -301,6 +305,9 @@ automation:
         entity_id: binary_sensor.vitovent_stage_mismatch
         to: "on"
     conditions:
+      - condition: state
+        entity_id: input_boolean.vitovent_control
+        state: "on"
       - condition: template
         value_template: "{{ this.attributes.last_triggered is none or (now() - this.attributes.last_triggered) > timedelta(hours=6) }}"
     actions:
@@ -343,6 +350,11 @@ input_select:
     options: ["Auto", "Reduced (100 m³/h)", "Normal (200 m³/h)", "High (300 m³/h)"]
 
 input_boolean:
+  # Read only by default: nothing is written to the unit (stage, filter reset) until this is turned on.
+  # No "initial" on purpose – off after the first start, afterwards the last state is restored.
+  vitovent_control:
+    name: "Vitovent Control"
+    icon: mdi:shield-lock-open
   vitovent_cooking:
     name: "Vitovent Cooking"
     icon: mdi:stove
@@ -371,6 +383,9 @@ script:
     icon: mdi:air-filter
     description: "Only after replacing the filters! Resets filter days and filter flow in the unit."
     sequence:
+      - condition: state
+        entity_id: input_boolean.vitovent_control
+        state: "on"
       - action: mqtt.publish
         data:
           topic: ebusd/Vitovent300W400/ResetNotifications/set

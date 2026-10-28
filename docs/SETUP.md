@@ -89,6 +89,8 @@ create an automation on *Filter change needed* or *Unit does not follow* turning
    Schedule helper offers additional data per block (current versions do).
 5. Restart Home Assistant. `input_select.vitovent_mode` = **Auto** lets HA decide; the attribute `reason` of
    `sensor.vitovent_target_stage` tells you why.
+6. The package starts **read only** (0.4.1): nothing is sent to the unit until you turn on **Vitovent Control**
+   (`input_boolean.vitovent_control`). Check the values first; the filter reset also needs Control on.
 
 ## 5. Findings worth knowing
 
@@ -149,4 +151,6 @@ Test unit, 10 °C outside, 50–80 m³/h: about 80 %.
 
 Ventilation matters for the building: too little air means humidity and mould, wrong settings in winter can affect
 frost protection. The package never switches the unit off and never writes installer parameters. Check humidity in
-the first weeks. Everything here is provided **without warranty**.
+the first weeks. Only one unit/software version was tested – see README *Tested on* and *Failure behaviour*.
+Everything here is provided free of charge **without warranty**; liability is excluded as far as the law permits
+(mandatory statutory liability stays unaffected).
