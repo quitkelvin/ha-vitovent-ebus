@@ -1,0 +1,2 @@
+# gitleaks false positive: translation_key=f"limit_{key}" is no secret
+2917038e128217af064e69bc6c8e90c70396f421:custom_components/vitovent_ebus/number.py:generic-api-key:89
